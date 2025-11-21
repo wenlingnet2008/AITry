@@ -4,8 +4,8 @@ import { VisualCards } from './components/VisualCards';
 import { SelectionGrid } from './components/SelectionGrid';
 import { PRESET_PERSONS, PRESET_CLOTHES } from './constants';
 import { ImageItem, AppStep, HistoryItem } from './types';
-import { generateClothingImage, generateTryOn } from './services/geminiService';
-import { Loader2, ArrowRight, RefreshCcw, Sparkles, Save, ChevronLeft, History, User } from 'lucide-react';
+import { generateClothingImage, generateTryOn, generateMultiViewTryOn } from './services/geminiService';
+import { Loader2, ArrowRight, RefreshCcw, Sparkles, Save, ChevronLeft, History, User, Layers } from 'lucide-react';
 
 function App() {
   // State
@@ -80,6 +80,31 @@ function App() {
     } catch (error) {
       alert('换装生成失败，请检查网络配置或 API Key。');
       setStep(AppStep.SELECT_CLOTH);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleMultiView = async () => {
+    if (!selectedPerson || !selectedCloth) return;
+    setIsGenerating(true);
+    setResultImage(undefined);
+    
+    try {
+      const resultUrl = await generateMultiViewTryOn(selectedPerson.url, selectedCloth.url);
+      setResultImage(resultUrl);
+      
+      const historyItem: HistoryItem = {
+        id: `h_mv_${Date.now()}`,
+        personUrl: selectedPerson.url,
+        clothUrl: selectedCloth.url,
+        resultUrl,
+        timestamp: Date.now()
+      };
+      setHistory([historyItem, ...history]);
+    } catch (error) {
+      alert('多视图生成失败，请稍后再试。');
+      // Don't change step, just allow retry
     } finally {
       setIsGenerating(false);
     }
@@ -225,17 +250,24 @@ function App() {
               保存到相册
             </a>
             
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-3">
+               <button 
+                onClick={handleMultiView}
+                className="flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 bg-white border border-gray-200 hover:bg-purple-50 hover:border-purple-200 hover:text-purple-600 text-gray-700 py-3 rounded-xl font-medium transition-all text-xs md:text-sm"
+              >
+                <Layers className="w-4 h-4" /> 
+                生成多视图
+              </button>
                <button 
                 onClick={() => setStep(AppStep.SELECT_CLOTH)}
-                className="flex items-center justify-center gap-2 bg-white border border-gray-200 hover:bg-gray-50 hover:border-purple-200 text-gray-700 py-3 rounded-xl font-medium transition-all"
+                className="flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 bg-white border border-gray-200 hover:bg-gray-50 hover:border-purple-200 text-gray-700 py-3 rounded-xl font-medium transition-all text-xs md:text-sm"
               >
                 <RefreshCcw className="w-4 h-4" /> 
                 换件衣服
               </button>
               <button
                 onClick={() => setStep(AppStep.SELECT_PERSON)}
-                className="flex items-center justify-center gap-2 bg-white border border-gray-200 hover:bg-gray-50 hover:border-purple-200 text-gray-700 py-3 rounded-xl font-medium transition-all"
+                className="flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 bg-white border border-gray-200 hover:bg-gray-50 hover:border-purple-200 text-gray-700 py-3 rounded-xl font-medium transition-all text-xs md:text-sm"
               >
                 <User className="w-4 h-4" /> 
                 换个模特

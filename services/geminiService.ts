@@ -100,3 +100,45 @@ export const generateTryOn = async (personUrl: string, clothUrl: string): Promis
 
   throw new Error("生成失败，请重试。");
 };
+
+export const generateMultiViewTryOn = async (personUrl: string, clothUrl: string): Promise<string> => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
+  const personBase64 = await urlToBase64(personUrl);
+  const clothBase64 = await urlToBase64(clothUrl);
+
+  const prompt = "Generate a wide fashion composition showing the person from the first image wearing the clothing from the second image in three different angles side-by-side: Front view, Side view, and Back view. Ensure consistent identity and clothing details across all views. High-quality, photorealistic, full body, simple background.";
+
+  const response = await ai.models.generateContent({
+    model: MODEL_NAME,
+    contents: {
+      parts: [
+        {
+          inlineData: {
+            mimeType: 'image/jpeg',
+            data: personBase64
+          }
+        },
+        {
+          inlineData: {
+            mimeType: 'image/jpeg',
+            data: clothBase64
+          }
+        },
+        {
+          text: prompt
+        }
+      ]
+    }
+  });
+
+  if (response.candidates && response.candidates[0] && response.candidates[0].content && response.candidates[0].content.parts) {
+    for (const part of response.candidates[0].content.parts) {
+      if (part.inlineData) {
+         return `data:${part.inlineData.mimeType || 'image/png'};base64,${part.inlineData.data}`;
+      }
+    }
+  }
+
+  throw new Error("生成多视图失败，请重试。");
+};
