@@ -1,0 +1,5 @@
+{
+  "name": "AI 换装工坊",
+  "description": "使用 Gemini Nano Banana 模型实现的虚拟换装应用，支持自定义模特与服饰生成。",
+  "requestFramePermissions": []
+}
